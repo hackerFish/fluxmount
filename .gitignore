@@ -1,0 +1,24 @@
+# ===== macOS =====
+.DS_Store
+.AppleDouble
+*.swp
+.Spotlight-V100
+.Trashes
+
+# ===== install.sh 产生的备份 / 运行产物 =====
+.fluxmount-backup/
+*.bak
+*.log
+/tmp/
+
+# ===== 编辑器 =====
+.idea/
+.vscode/
+*.iml
+
+# ===== 未来若引入 Node 工具 =====
+node_modules/
+
+# ===== 打包产物（仓库只存源码） =====
+*.zip
+dist/

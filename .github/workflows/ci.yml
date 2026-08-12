@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  shellcheck:
+    name: Bash syntax & shellcheck
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: brew install shellcheck
+
+      - name: Syntax check (bash -n)
+        run: |
+          for f in scripts/*.sh; do
+            echo "==> bash -n $f"
+            bash -n "$f"
+          done
+
+      - name: Static analysis (shellcheck)
+        run: |
+          for f in scripts/*.sh; do
+            echo "==> shellcheck $f"
+            shellcheck "$f"
+          done

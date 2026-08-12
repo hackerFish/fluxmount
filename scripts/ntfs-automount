@@ -1,0 +1,13 @@
+#!/bin/bash
+# ============================================================================
+#  FluxMount  ·  ntfs-automount
+#  作者: 张昌宇 (Changyu Zhang)
+#  用途: 被 LaunchAgent 在【开机】和【热插拔】时调用，自动以可读写挂载 NTFS 盘。
+#        日志写到 /tmp/fluxmount.log 便于排查。
+#  注意: 本脚本以当前用户身份运行，内部 mount-ntfs-rw 用免密 sudo 提权
+#        (已在 /etc/sudoers.d/fluxmount 配置 NOPASSWD)，无需人工输密码。
+# ============================================================================
+LOG="/tmp/fluxmount.log"
+echo "[$(date)] FluxMount: 触发自动挂载" >> "$LOG"
+/usr/local/bin/mount-ntfs-rw >> "$LOG" 2>&1
+echo "[$(date)] FluxMount: 本次退出码 $?" >> "$LOG"

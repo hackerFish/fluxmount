@@ -1,0 +1,141 @@
+#!/bin/bash
+# ============================================================================
+#  FluxMount  ·  mount-ntfs-rw
+#  作者: 张昌宇 (Changyu Zhang)
+#  功能: 把 macOS 默认【只读】挂载的外接 NTFS 硬盘，重新以【可读写】挂载。
+#        支持多块硬盘、幂等(已可读写则跳过)、带退避重试与写权限校验。
+#        挂载成功会登记到状态文件，供 uninstall.sh 精准、安全地回退(只动自己的盘)。
+#  用法: sudo mount-ntfs-rw              (普通用户运行亦可，内部会按需 sudo)
+#        sudo mount-ntfs-rw --dry-run   仅打印将要做什么，不改动任何挂载
+#        sudo mount-ntfs-rw --check     供免密 sudo 自检(返回 0 即 NOPASSWD 生效)
+#  安全: 本脚本只做两件事——卸掉系统的只读挂载，用 ntfs-3g 重新挂成读写。
+#        不会删除/改动你盘里的任何数据(已实测)。
+# ============================================================================
+set -uo pipefail
+
+# 从 mount 行里稳健地取出挂载点(兼容卷名含空格的情况):
+#   格式: /dev/disk12s2 on /Volumes/My Disk (ntfs, local, read-only, ...)
+#   挂载点 = " on " 与 " (" 之间的部分
+parse_mountpoint() {
+  echo "$1" | sed -n 's/^.*[[:space:]]on[[:space:]]\(.*\)[[:space:]](\(.*\)$/\1/p'
+}
+
+# 打印所有 NTFS 盘的可读写状态(零依赖、便于排查与截图)
+print_status() {
+  echo "FluxMount 状态 / Status"
+  echo "----------------------------------------"
+  local found=0
+  while IFS= read -r line; do
+    echo "$line" | grep -qiE 'ntfs|macfuse' || continue
+    local dev mp rw
+    dev=$(echo "$line" | awk '{print $1}')
+    mp=$(parse_mountpoint "$line")
+    [ -z "$mp" ] && mp=$(echo "$line" | awk '{print $3}')
+    if echo "$line" | grep -qw macfuse; then
+      rw="可读写 READ-WRITE ✅"
+    elif echo "$line" | grep -qw ntfs; then
+      if echo "$line" | grep -q "read-only"; then rw="只读 READ-ONLY ❌ (需重挂载)"; else rw="未知 UNKNOWN"; fi
+    else
+      continue
+    fi
+    echo "  $dev  ->  $mp   [$rw]"
+    found=1
+  done < <(mount | grep -iE 'ntfs|macfuse')
+  [ "$found" -eq 0 ] && echo "  (未检测到 NTFS 盘 / No NTFS disk detected)"
+  echo "----------------------------------------"
+  exit 0
+}
+
+# 免密 sudo 自检必须最先处理，确保无论 ntfs-3g 是否就绪都能返回结果
+if [ "${1:-}" = "--check" ]; then exit 0; fi
+if [ "${1:-}" = "--status" ]; then print_status; fi
+
+DRY_RUN=0
+[ "${1:-}" = "--dry-run" ] && DRY_RUN=1
+
+STATE_DIR="/usr/local/var/fluxmount"
+STATE_FILE="$STATE_DIR/state"
+
+NTFS_3G="$(command -v ntfs-3g 2>/dev/null || true)"
+[ -z "$NTFS_3G" ] && NTFS_3G="/usr/local/bin/ntfs-3g"
+if [ ! -x "$NTFS_3G" ]; then
+  echo "❌ 找不到 ntfs-3g，请先运行安装脚本 install.sh"
+  exit 1
+fi
+
+# 从 mount 行里稳健地取出挂载点(兼容卷名含空格)的逻辑见顶部 parse_mountpoint()
+
+REMOUNTED=0
+FAILED=0
+SKIPPED=0
+
+# 找出所有被 macOS 以只读方式挂载的 NTFS 分区 (类型含 ntfs，且非我们已挂的 macfuse)
+# mount 行示例: /dev/disk12s2 on /Volumes/新加卷 (ntfs, local, ..., read-only, ...)
+while IFS= read -r line; do
+  # 跳过已经是我们用 macfuse 挂好的(可读写)，避免热插拔重复触发时打断正在用的盘
+  echo "$line" | grep -qw macfuse && { SKIPPED=$((SKIPPED+1)); continue; }
+  # 只处理 ntfs 类型
+  echo "$line" | grep -qw ntfs || continue
+
+  dev=$(echo "$line" | awk '{print $1}')
+  mp=$(parse_mountpoint "$line")
+  [ -z "$mp" ] && { echo "⚠️ 无法解析挂载点，跳过: $line"; continue; }
+  target="$mp"   # 挂回原卷名，Finder 里磁盘名字不变，只是变成可写
+
+  if [ "$DRY_RUN" -eq 1 ]; then
+    echo "🔍 [dry-run] 将卸载只读挂载: $mp ($dev)"
+    echo "🔍 [dry-run] 将以可读写重新挂载: $dev -> $target"
+    SKIPPED=$((SKIPPED+1))
+    continue
+  fi
+
+  echo "🔌 卸载系统只读挂载: $mp ($dev)"
+  diskutil unmount "$mp" >/dev/null 2>&1 || sudo umount "$mp" >/dev/null 2>&1
+  sleep 1
+
+  # 兜底: 卸载后系统会删掉 /Volumes/<卷名>，先确保挂载目录存在
+  sudo mkdir -p "$target" 2>/dev/null || true
+
+  echo "⚡ 以可读写挂载: $dev -> $target"
+  ok=0
+  for attempt in 1 2 3; do
+    if sudo "$NTFS_3G" "$dev" "$target" -o rw,auto_xattr,auto_cache,local,allow_other 2>/dev/null; then
+      # 写权限校验
+      probe="$target/.fluxmount_rw_test_$(date +%s)"
+      if touch "$probe" 2>/dev/null; then
+        rm -f "$probe"
+        ok=1
+        break
+      fi
+    fi
+    [ "$attempt" -lt 3 ] && sleep $((attempt * 2))
+  done
+
+  if [ "$ok" -eq 1 ]; then
+    echo "✅ $target 已可读写"
+    REMOUNTED=$((REMOUNTED+1))
+    # 登记到状态文件，uninstall 只回退这些盘，绝不误伤其他 macFUSE 挂载
+    mkdir -p "$STATE_DIR" 2>/dev/null && echo "$target" >> "$STATE_FILE" 2>/dev/null || true
+  else
+    echo "❌ $dev 挂载失败 —— 最常见原因：macFUSE 系统扩展尚未在「系统设置→隐私与安全性」批准。"
+    echo "   请点【允许】后重启，再跑一次 sudo mount-ntfs-rw"
+    FAILED=$((FAILED+1))
+  fi
+done < <(mount | grep -i ntfs)
+
+echo ""
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo "🔍 dry-run 结束：未做任何改动。去掉 --dry-run 才会真正挂载。"
+  exit 0
+fi
+if [ "$REMOUNTED" -gt 0 ]; then
+  echo "🎉 完成！现在可以直接往 NTFS 盘 ($REMOUNTED 块) 里复制 / 写入文件了。"
+  echo "   用完安全弹出: diskutil unmount /Volumes/<盘名>"
+fi
+if [ "$FAILED" -gt 0 ]; then
+  echo "⚠️  有 $FAILED 块分区未能可读写挂载（多半是系统扩展未批准，见上方提示）。"
+  exit 1
+fi
+if [ "$REMOUNTED" -eq 0 ] && [ "$FAILED" -eq 0 ]; then
+  echo "✅ 没有检测到需要处理的 NTFS 只读分区（可能已经是可读写状态，或被系统扩展挡住）。"
+fi
