@@ -3,6 +3,8 @@
 > 结论先行：**WorkBuddy、OpenClaw、Qoder、扣子(Coze) 都采用同一套 Anthropic「Agent Skills」开放标准**——核心就是一个"含 `SKILL.md` 的文件夹 + `name`/`description` frontmatter"。
 > 所以 FluxMount **不用为每家重写**。差异只在三件事：**① 放到哪个目录 ② 怎么发布/安装 ③ 云端平台能不能跑本地 bash**。
 
+> ⚠️ **重要澄清（易误解）**：ClawHub 是 **OpenClaw 生态的官方市场**，**不是**"发一次就自动铺满所有平台"。同一份文件夹虽然能分别提交到各家，但 ClawHub / SkillHub / Qoder / 扣子 是**相互独立的提交入口**，每家要各交一次。ClawHub 的"一处发布、多处可用"只成立在**安装侧**（兼容 Agent Skills 的桌面 agent 都能 `clawhub install`），并不代表技能会自动出现在 WorkBuddy SkillHub、Qoder、扣子的市场上。
+
 作者：张昌宇 (Changyu Zhang) · MIT
 
 ---
@@ -40,7 +42,7 @@
   # 或直接从 GitHub 装（Vercel 提供的 npx 方式）：
   npx skills add https://github.com/hackerFish/fluxmount --skill fluxmount
   ```
-- ClawHub 是**跨平台技能市场**：一次上架，所有兼容 Agent Skills 的桌面 agent（OpenClaw、Claude Desktop、DeerFlow 等）都能装 —— **这是"一处发布、多处可用"的最高杠杆**。
+- ClawHub 是 **OpenClaw 生态的官方技能市场**：发布后，所有兼容 Agent Skills 的桌面 agent（OpenClaw、Claude Desktop、DeerFlow 等）都能 `clawhub install` 装到 —— **这是"一处发布、多处可用"在"安装侧"的最高杠杆**。但要注意：它**不会自动**把技能同步到 WorkBuddy SkillHub、Qoder、扣子这些**独立市场**，那些仍需你分别提交（见下方发布顺序）。
 
 ### 3. Qoder（阿里 / 通义灵码，Qoder / QoderWork / Qoder CLI）
 - **项目级目录**：`.qoder/skills/fluxmount/SKILL.md`（结构同本仓库）
@@ -82,7 +84,7 @@ FluxMount 是**本地系统技能**：它要在**用户的 macOS 上**跑 bash�
 
 ## 四、推荐发布顺序（投入产出比最高）
 
-1. **先上 ClawHub**（OpenClaw 官方面向）：一次提交，覆盖所有兼容 Agent Skills 的桌面 agent（OpenClaw、Claude Desktop 等）。命令见上。
+1. **先上 ClawHub**（OpenClaw 官方市场，杠杆最高）：一次提交，让所有兼容 Agent Skills 的桌面 agent 都能装（OpenClaw、Claude Desktop 等）；腾讯 SkillHub 作为 ClawHub 的国内镜像，很可能自动同步收录，让 WorkBuddy 用户也能搜到。**注意**：Qoder、扣子仍需你另外提交。
 2. **再上 WorkBuddy SkillHub**：自然语言触达桌面办公用户。
 3. **Qoder**：上传 `.zip` 到 Cloud（面向 QoderWork 桌面用户）。
 4. **扣子 Coze**：以"本地 Skill"形态发布，并明确标注"需本地部署环境"。
@@ -102,5 +104,5 @@ FluxMount 是**本地系统技能**：它要在**用户的 macOS 上**跑 bash�
 <details>
 <summary>English summary</summary>
 
-All four named platforms (WorkBuddy, OpenClaw/ClawHub, Qoder, Coze) follow the same Anthropic "Agent Skills" open standard: a folder with `SKILL.md` + `name`/`description` frontmatter. FluxMount needs no rewrite — only per-platform placement/publish. Local-only agents (WorkBuddy desktop, OpenClaw, QoderWork, Coze local deploy) can actually mount NTFS; pure-cloud agents (Qoder Cloud, Coze web) cannot reach the user's local disk. Highest-leverage move: publish to ClawHub once (covers all Agent-Skills-compatible desktop agents), then SkillHub, Qoder, and Coze-local.
+All four named platforms (WorkBuddy, OpenClaw/ClawHub, Qoder, Coze) follow the same Anthropic "Agent Skills" open standard: a folder with `SKILL.md` + `name`/`description` frontmatter. FluxMount needs no rewrite — only per-platform placement/publish. Local-only agents (WorkBuddy desktop, OpenClaw, QoderWork, Coze local deploy) can actually mount NTFS; pure-cloud agents (Qoder Cloud, Coze web) cannot reach the user's local disk. Highest-leverage move: publish to ClawHub once (covers all Agent-Skills-compatible desktop agents on the *install* side), then submit separately to SkillHub, Qoder, and Coze-local. ClawHub does NOT auto-sync to proprietary markets.
 </details>
