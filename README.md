@@ -9,6 +9,18 @@
 
 ---
 
+### 🔌 装前 vs 装后（Before / After）
+
+| | 🚫 装前（原生 macOS） | ✅ 装后（FluxMount） |
+|---|---|---|
+| 写入文件 | 弹出"只读"，无法复制 / 拖入 | 直接拖进去，像本地盘一样用 |
+| 传文件 | 各种插件、网盘都传不进去 | 即插即用，随意读写 |
+| 每次插盘 | 要敲命令重新挂载 | 自动可读写（开机 + 热插拔） |
+| 多盘 / 重名 | 易冲突、需手动处理 | 遍历挂载、保留原卷名 |
+| 安全性 | — | 只重挂载、不删数据、可一键回退 |
+
+> English: Before FluxMount, macOS mounts NTFS **read-only** — you can see the files but cannot write. After, your NTFS drive behaves like a native writable disk: plug in and drag files, auto-mount on boot & hotplug, fully reversible and safe.
+
 ## 中文
 
 ### 为什么需要它
