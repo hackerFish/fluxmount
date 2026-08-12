@@ -5,9 +5,11 @@ slug: fluxmount
 version: 1.0.0
 author: 张昌宇 (Changyu Zhang)
 description: >-
-  FluxMount 让 macOS 自由读写外接 NTFS 硬盘：基于 macFUSE + ntfs-3g，支持
-  开机与热插拔自动挂载、多盘、幂等、健康自检、dry-run 预览、可回退卸载，
-  并针对国内网络（GitHub 被墙、Homebrew Tier-3 无包）做了专门适配。
+  FluxMount 让 macOS 自由读写外接 NTFS 移动硬盘/SSD：基于 macFUSE + ntfs-3g，
+  插上即用、开机与热插拔自动挂载、多盘兼容、幂等防重入，
+  并提供一键安装、dry-run 预览、健康自检与可回退卸载。
+  专为国内网络优化（GitHub 被墙、Homebrew Tier-3 无预编译包均能自动绕过）。
+  安全可控，绝不删改盘内数据。作者：张昌宇。
 license: MIT
 tags:
   - macos
