@@ -38,7 +38,7 @@
   npm i -g clawhub
   clawhub install fluxmount            # 若已上架 ClawHub
   # 或直接从 GitHub 装（Vercel 提供的 npx 方式）：
-  npx skills add https://github.com/ChangyuZhang/fluxmount --skill fluxmount
+  npx skills add https://github.com/hackerFish/fluxmount --skill fluxmount
   ```
 - ClawHub 是**跨平台技能市场**：一次上架，所有兼容 Agent Skills 的桌面 agent（OpenClaw、Claude Desktop、DeerFlow 等）都能装 —— **这是"一处发布、多处可用"的最高杠杆**。
 

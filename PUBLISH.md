@@ -51,7 +51,7 @@ FluxMount 是 **WorkBuddy 技能（Skill）**，发布后有两种分发方式�
 - WorkBuddy 内若提供技能作者面板，调用统计会在那里呈现（以平台实际功能为准）。
 
 ### 2. GitHub 侧（必看，免费且实时）
-在 `https://github.com/ChangyuZhang/fluxmount` 的 **Insights** 标签页：
+在 `https://github.com/hackerFish/fluxmount` 的 **Insights** 标签页：
 - **Traffic**：页面访问量、克隆数（最接近"被多少人看到/下载"的指标）
 - **Stars / Forks**：受欢迎度与传播度
 - **Issues**：Bug 报告与功能请求（= 反馈主渠道）
@@ -78,7 +78,7 @@ git init
 git add .
 git commit -m "FluxMount v1.0.0 - macOS NTFS read-write skill by Changyu Zhang"
 git branch -M main
-git remote add origin https://github.com/ChangyuZhang/fluxmount.git
+git remote add origin https://github.com/hackerFish/fluxmount.git
 git push -u origin main
 ```
 
